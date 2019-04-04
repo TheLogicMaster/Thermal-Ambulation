@@ -1,0 +1,12 @@
+[{
+  "modid": "thermalambulation",
+  "name": "Thermal Ambulation",
+  "description": "A robot machine mod.",
+  "version": "1.0.0.0",
+  "mcversion": "1.10.2",
+  "logoFile": "assets/thermalambulation/textures/logo.png",
+  "url": "thelogicmaster.com/",
+  "updateJSON": "minecraftforge.net/versions.json",
+  "authorList": ["LogicMaster63"],
+  "credits": ""
+}]

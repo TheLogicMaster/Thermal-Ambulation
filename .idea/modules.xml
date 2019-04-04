@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Thermal_Ambulation.iml" filepath="$PROJECT_DIR$/Thermal_Ambulation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Thermal_Ambulation_api.iml" filepath="$PROJECT_DIR$/.idea/modules/Thermal_Ambulation_api.iml" group="Thermal_Ambulation" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Thermal_Ambulation_main.iml" filepath="$PROJECT_DIR$/.idea/modules/Thermal_Ambulation_main.iml" group="Thermal_Ambulation" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Thermal_Ambulation_test.iml" filepath="$PROJECT_DIR$/.idea/modules/Thermal_Ambulation_test.iml" group="Thermal_Ambulation" />
+    </modules>
+  </component>
+</project>
