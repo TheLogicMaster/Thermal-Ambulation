@@ -19,3 +19,5 @@ item.wire_copper.name=Copper Wire
 
 item.corn.name=Corn
 item.seed_corn.name=Corn Seed
+
+thermalambulation.strings.clearproxies=Removed Machine Proxies

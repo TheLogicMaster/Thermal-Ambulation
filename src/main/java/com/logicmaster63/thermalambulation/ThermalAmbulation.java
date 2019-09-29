@@ -1,6 +1,7 @@
 package com.logicmaster63.thermalambulation;
 
 import com.logicmaster63.thermalambulation.block.Blocks;
+import com.logicmaster63.thermalambulation.command.ClearProxiesCommand;
 import com.logicmaster63.thermalambulation.command.TeleportCommand;
 import com.logicmaster63.thermalambulation.dimension.Dimensions;
 import com.logicmaster63.thermalambulation.item.Items;
@@ -8,6 +9,7 @@ import com.logicmaster63.thermalambulation.proxy.CommonProxy;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.common.ForgeChunkManager;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -54,5 +56,6 @@ public class ThermalAmbulation {
     @Mod.EventHandler
     public void serverLoad(FMLServerStartingEvent event) {
         event.registerServerCommand(new TeleportCommand());
+        event.registerServerCommand(new ClearProxiesCommand());
     }
 }
