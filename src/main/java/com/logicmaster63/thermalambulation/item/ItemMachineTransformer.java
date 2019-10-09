@@ -49,7 +49,7 @@ public class ItemMachineTransformer extends ItemBase {
         if (worldIn.isAirBlock(pos) || !ServerHelper.isServerWorld(worldIn) || !player.isSneaking() || worldIn.getTileEntity(pos) == null)
             return EnumActionResult.PASS;
         NBTTagCompound nbt = worldIn.getTileEntity(pos).serializeNBT();
-        ThermalAmbulation.logger.info("DIR: " + ((TileMachineBase) worldIn.getTileEntity(pos)).getFacing());
+        //ThermalAmbulation.logger.info("DIR: " + ((TileMachineBase) worldIn.getTileEntity(pos)).getFacing());
         float dir = EnumFacing.getFront(((TileMachineBase) worldIn.getTileEntity(pos)).getFacing()).getHorizontalAngle();
         MachineProxy machine = RemoteMachineRegistry.get().proxyMachine(worldIn.getBlockState(pos), nbt);
         if (machine == null)
@@ -64,16 +64,23 @@ public class ItemMachineTransformer extends ItemBase {
 
         walker.setMachine(machine);
         walker.setPositionAndRotation(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, dir, 0);
-        walker.setTamed(true);
-        walker.setOwnerId(player.getUniqueID());
+        walker.setTamedBy(player);
         NBTTagCompound emptied = worldIn.getTileEntity(pos).serializeNBT();
         emptied.setTag("Inventory", new NBTTagList());
         emptied.setTag("Items", new NBTTagList());
+        //Didn't fix freezing issue
+        //ThermalAmbulation.logger.info(emptied);
+        //emptied.setInteger("ProcRem", 0);
+        //emptied.setInteger("ProcMax", 0);
+        //emptied.setByte("Active", (byte)0);
+        //ThermalAmbulation.logger.info(emptied);
         worldIn.getTileEntity(pos).deserializeNBT(emptied);
         worldIn.destroyBlock(pos, false);
-        ThermalAmbulation.logger.log(Level.INFO, "Created walker entity(Add more debug info)");
 
+        ThermalAmbulation.logger.log(Level.INFO, "Created walker entity(Add more debug info)");
+        //Todo: Fix bug where machine gets frozen if transformed mid-smelt
         worldIn.spawnEntity(walker);
+        //worldIn.setEntityState(walker, (byte)7);
         return EnumActionResult.SUCCESS;
     }
 }

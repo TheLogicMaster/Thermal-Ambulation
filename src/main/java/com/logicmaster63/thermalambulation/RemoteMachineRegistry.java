@@ -32,6 +32,7 @@ import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.Level;
 
 import java.util.*;
@@ -132,14 +133,31 @@ public class RemoteMachineRegistry extends WorldSavedData {
         for (int i = 0; i < MAX_MACHINES; i++) {
             if (!machines.containsKey(i)) {
                 BlockPos pos = new BlockPos(2 * i, 0, 0);
-                proxyWorld.setBlockState(pos, blockState);
-                nbt.setByte("Facing", (byte)4);
-                nbt.setByteArray("SideCache", new byte[]{1, 1, 2, 2, 0, 2});
-                nbt.setInteger("x", pos.getX());
-                nbt.setInteger("y", pos.getY());
-                nbt.setInteger("z", pos.getZ());
-                ThermalAmbulation.logger.info("NBT: " + nbt);
-                proxyWorld.getTileEntity(pos).deserializeNBT(nbt);
+                if (!proxyWorld.setBlockState(pos, blockState, 11))
+                    ThermalAmbulation.logger.info("Failed to set state?");//return null;
+                NBTTagCompound copy = nbt.copy();
+                copy.setByte("Facing", (byte)4);
+                copy.setByteArray("SideCache", new byte[]{1, 1, 2, 2, 0, 2});
+                copy.setInteger("x", pos.getX());
+                copy.setInteger("y", pos.getY());
+                copy.setInteger("z", pos.getZ());
+                //copy.setInteger("ProcRem", 0);
+                //copy.setInteger("ProcMax", 0);
+                //copy.setByte("Active", (byte)0);
+                ThermalAmbulation.logger.info("NBT: " + copy);
+                //proxyWorld.getTileEntity(pos).deserializeNBT(copy);
+                //proxyWorld.getTileEntity(pos).readFromNBT(copy);
+                IBlockState state = proxyWorld.getBlockState(pos);
+                ThermalAmbulation.logger.info("State: " + state.getBlock());
+                //state.getBlock().onBlockPlacedBy(proxyWorld, pos, state, null, null);
+                //((TileMachineBase) proxyWorld.getTileEntity(pos)).markDirty();
+                //((TileMachineBase) proxyWorld.getTileEntity(pos)).markChunkDirty();
+                //((TileMachineBase) proxyWorld.getTileEntity(pos)).callBlockUpdate();
+                //((TileMachineBase) proxyWorld.getTileEntity(pos)).invalidate();
+                //((TileMachineBase) proxyWorld.getTileEntity(pos)).updateAugmentStatus();
+                //((TileMachineBase) proxyWorld.getTileEntity(pos)).validate();
+                //((TileMachineBase) proxyWorld.getTileEntity(pos)).updateContainingBlockInfo();
+                //((TileMachineBase) proxyWorld.getTileEntity(pos)).sendTilePacket(Side.SERVER);
                 machines.put(i, pos);
                 markDirty();
                 MachineProxy machine = new MachineProxy();

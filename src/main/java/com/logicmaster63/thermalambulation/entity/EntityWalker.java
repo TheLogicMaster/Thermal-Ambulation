@@ -264,6 +264,11 @@ public class EntityWalker extends EntityMachine {
             }
         }
 
+        if (player.isSneaking()) {
+            setSitting(!isSitting());
+            return true;
+        }
+
         if (machine == null)
             return false;
         return machine.processInteract(player, hand);
@@ -275,11 +280,13 @@ public class EntityWalker extends EntityMachine {
         if (machine != null)
             for (ItemStack stack : machine.destroy())
                 world.spawnEntity(new EntityItem(world, posX, posY, posZ, stack));
+        for (ItemStack stack : upgradeItems)
+            world.spawnEntity(new EntityItem(world, posX, posY, posZ, stack));
     }
 
     private static NBTTagCompound writeUpgradesToNBT(NBTTagCompound nbt, List<ItemStack> upgrades) {
         NBTTagList upgradeTags = new NBTTagList();
-        for (ItemStack upgrade: upgrades)
+        for (ItemStack upgrade : upgrades)
             upgradeTags.appendTag(upgrade.serializeNBT());
         nbt.setTag("Upgrades", upgradeTags);
         return nbt;
