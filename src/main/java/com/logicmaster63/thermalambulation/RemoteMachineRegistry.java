@@ -40,6 +40,7 @@ import java.util.*;
 public class RemoteMachineRegistry extends WorldSavedData {
 
     private static final String DATA_NAME = ThermalAmbulation.MOD_ID + "_RemoteMachineData";
+    // Todo: Set from config
     private static final int MAX_MACHINES = 9001;
 
     private HashMap<Integer, BlockPos> machines = new HashMap<>();
@@ -90,7 +91,7 @@ public class RemoteMachineRegistry extends WorldSavedData {
     }
 
     public void clear() {
-        for (BlockPos pos: machines.values())
+        for (BlockPos pos : machines.values())
             proxyWorld.setBlockToAir(pos);
         machines.clear();
         markDirty();
@@ -129,44 +130,58 @@ public class RemoteMachineRegistry extends WorldSavedData {
         return proxyWorld.getTileEntity(machines.get(index));
     }
 
-    public MachineProxy proxyMachine(IBlockState blockState, NBTTagCompound nbt) {
+    private int getNextIndex() {
         for (int i = 0; i < MAX_MACHINES; i++) {
-            if (!machines.containsKey(i)) {
-                BlockPos pos = new BlockPos(2 * i, 0, 0);
-                if (!proxyWorld.setBlockState(pos, blockState, 11))
-                    ThermalAmbulation.logger.info("Failed to set state?");//return null;
-                NBTTagCompound copy = nbt.copy();
-                copy.setByte("Facing", (byte)4);
-                copy.setByteArray("SideCache", new byte[]{1, 1, 2, 2, 0, 2});
-                copy.setInteger("x", pos.getX());
-                copy.setInteger("y", pos.getY());
-                copy.setInteger("z", pos.getZ());
-                //copy.setInteger("ProcRem", 0);
-                //copy.setInteger("ProcMax", 0);
-                //copy.setByte("Active", (byte)0);
-                ThermalAmbulation.logger.info("NBT: " + copy);
-                //proxyWorld.getTileEntity(pos).deserializeNBT(copy);
-                //proxyWorld.getTileEntity(pos).readFromNBT(copy);
-                IBlockState state = proxyWorld.getBlockState(pos);
-                ThermalAmbulation.logger.info("State: " + state.getBlock());
-                //state.getBlock().onBlockPlacedBy(proxyWorld, pos, state, null, null);
-                //((TileMachineBase) proxyWorld.getTileEntity(pos)).markDirty();
-                //((TileMachineBase) proxyWorld.getTileEntity(pos)).markChunkDirty();
-                //((TileMachineBase) proxyWorld.getTileEntity(pos)).callBlockUpdate();
-                //((TileMachineBase) proxyWorld.getTileEntity(pos)).invalidate();
-                //((TileMachineBase) proxyWorld.getTileEntity(pos)).updateAugmentStatus();
-                //((TileMachineBase) proxyWorld.getTileEntity(pos)).validate();
-                //((TileMachineBase) proxyWorld.getTileEntity(pos)).updateContainingBlockInfo();
-                //((TileMachineBase) proxyWorld.getTileEntity(pos)).sendTilePacket(Side.SERVER);
-                machines.put(i, pos);
-                markDirty();
-                MachineProxy machine = new MachineProxy();
-                machine.setIndex(i);
-                machine.init();
-                ThermalAmbulation.logger.info("Created Machine Proxy: " + i);
-                return machine;
-            }
+            if (!machines.containsKey(i))
+                return i;
         }
-        return null;
+        return -1;
+    }
+
+    private BlockPos getPosFromIndex(int index) {
+        int chunk = index / (128 * 8 * 8);
+        // Todo: Ensure chunks are loaded
+        int y = index / 64 % 128;
+        int x = index / 8 % 8;
+        int z = index % 8;
+        return new BlockPos(x * 2, y * 2 ,z * 2);
+    }
+
+    public MachineProxy proxyMachine(IBlockState blockState, NBTTagCompound nbt) {
+        int index = getNextIndex();
+        BlockPos pos = getPosFromIndex(index);
+        if (!proxyWorld.setBlockState(pos, blockState, 11))
+            ThermalAmbulation.logger.info("Failed to set state?");//return null;
+        NBTTagCompound copy = nbt.copy();
+        copy.setByte("Facing", (byte) 4);
+        copy.setByteArray("SideCache", new byte[]{0, 0, 0, 0, 0, 0});
+        copy.setByte("EnableOut", (byte) 0);
+        copy.setInteger("x", pos.getX());
+        copy.setInteger("y", pos.getY());
+        copy.setInteger("z", pos.getZ());
+        //copy.setInteger("ProcRem", 0);
+        //copy.setInteger("ProcMax", 0);
+        //copy.setByte("Active", (byte)0);
+        ThermalAmbulation.logger.info("NBT: " + copy);
+        //proxyWorld.getTileEntity(pos).deserializeNBT(copy);
+        proxyWorld.getTileEntity(pos).readFromNBT(copy);
+        //IBlockState state = proxyWorld.getBlockState(pos);
+        //ThermalAmbulation.logger.info("State: " + state.getBlock()); Integer.toString(x) + ""
+        //state.getBlock().onBlockPlacedBy(proxyWorld, pos, state, null, null);
+        //((TileMachineBase) proxyWorld.getTileEntity(pos)).markDirty();
+        //((TileMachineBase) proxyWorld.getTileEntity(pos)).markChunkDirty();
+        //((TileMachineBase) proxyWorld.getTileEntity(pos)).callBlockUpdate();
+        //((TileMachineBase) proxyWorld.getTileEntity(pos)).invalidate();
+        //((TileMachineBase) proxyWorld.getTileEntity(pos)).updateAugmentStatus();
+        //((TileMachineBase) proxyWorld.getTileEntity(pos)).validate();
+        //((TileMachineBase) proxyWorld.getTileEntity(pos)).updateContainingBlockInfo();
+        //((TileMachineBase) proxyWorld.getTileEntity(pos)).sendTilePacket(Side.SERVER);
+        machines.put(index, pos);
+        markDirty();
+        MachineProxy machine = new MachineProxy();
+        machine.setIndex(index);
+        machine.init();
+        ThermalAmbulation.logger.info("Created Machine Proxy: " + index);
+        return machine;
     }
 }

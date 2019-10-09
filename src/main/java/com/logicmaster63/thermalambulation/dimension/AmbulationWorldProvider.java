@@ -14,6 +14,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import java.util.List;
 
 public class AmbulationWorldProvider extends WorldProvider {
+    // Todo: Disable lighting and other needless things
+
     @Override
     public DimensionType getDimensionType() {
         return Dimensions.ambulationDimensionType;
@@ -31,7 +33,7 @@ public class AmbulationWorldProvider extends WorldProvider {
 
     @Override
     public String getSaveFolder() {
-        return "TEST";
+        return "Proxy";
     }
 
     @Override

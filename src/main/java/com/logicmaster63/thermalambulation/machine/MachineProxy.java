@@ -79,14 +79,13 @@ public class MachineProxy implements IMachine {
     public boolean processInteract(EntityPlayer player, EnumHand hand) {
         ItemStack held = Util.playerAndHandToItemStack(player, hand);
         if (!player.world.isRemote) {
-            if (held.getItem() instanceof IUpgradeItem && tileEntity instanceof IUpgradeable) {
-                if (!((IUpgradeable) tileEntity).canUpgrade(held))
-                    return false;
+            if (held.getItem() instanceof IUpgradeItem && tileEntity instanceof IUpgradeable && ((IUpgradeable) tileEntity).canUpgrade(held)) {
                 if (((IUpgradeable) tileEntity).installUpgrade(held)) {
                     if (!player.capabilities.isCreativeMode) {
                         held.shrink(1);
                     }
                     player.world.playSound(null, player.getPosition(), SoundEvents.BLOCK_ANVIL_USE, SoundCategory.PLAYERS, 0.6F, 1.0F);
+                    // Todo: Customized chat messages
                     ChatHelper.sendIndexedChatMessageToPlayer(player, new TextComponentTranslation("chat.thermalfoundation.upgrade.install.success"));
                 } else {
                     ChatHelper.sendIndexedChatMessageToPlayer(player, new TextComponentTranslation("chat.thermalfoundation.upgrade.install.failure"));

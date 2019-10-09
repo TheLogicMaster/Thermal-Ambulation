@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Level;
 import org.lwjgl.opengl.GL11;
 
 import java.io.*;
+import java.lang.reflect.Field;
 
 public final class AmbulationUtils {
 
@@ -64,5 +65,25 @@ public final class AmbulationUtils {
         GlStateManager.disableBlend();
         GlStateManager.enableCull();
         GlStateManager.popMatrix();
+    }
+
+    public static Object getPrivateValue(Object obj, @SuppressWarnings("rawtypes") Class c, String field) {
+        return getPrivateValue(obj, c, new String[] {field});
+    }
+
+    public static Object getPrivateValue(Object obj, @SuppressWarnings("rawtypes") Class c, String[] fields)
+    {
+        for(String field : fields)
+        {
+            try {
+                Field f = c.getDeclaredField(field);
+                f.setAccessible(true);
+                return f.get(obj);
+            } catch(Exception e) {
+
+            }
+        }
+
+        return null;
     }
 }
