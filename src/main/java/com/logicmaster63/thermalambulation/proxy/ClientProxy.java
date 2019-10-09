@@ -1,5 +1,6 @@
 package com.logicmaster63.thermalambulation.proxy;
 
+import clayborn.universalremote.hooks.world.HookedClientWorld;
 import cofh.core.block.TilePowered;
 import cofh.core.gui.element.ElementButton;
 import cofh.thermalexpansion.block.machine.ItemBlockMachine;
@@ -11,6 +12,7 @@ import com.logicmaster63.thermalambulation.entity.EntityWalker;
 import com.logicmaster63.thermalambulation.entity.RenderWalker;
 import com.logicmaster63.thermalambulation.item.Items;
 import com.logicmaster63.thermalambulation.networking.EntityMachineMessage;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -40,27 +42,5 @@ public class ClientProxy extends CommonProxy {
         super.preInit(e);
         Entities.registerRenderers();
         ThermalAmbulation.networkWrapper.registerMessage(EntityMachineMessage.MachineMessageHandler.class, EntityMachineMessage.class, 0, Side.CLIENT);
-    }
-
-    @SubscribeEvent
-    public static void onGUI(GuiScreenEvent.InitGuiEvent event) {
-        if(event.getGui() instanceof GuiPoweredBase) {
-            /*boolean isRemote;
-            if(((TilePowered) GuiPoweredBase.class.getField("baseTile").get()).getWorld().equals(DimensionManager.getWorld(63)))
-                    isRemote = false;
-
-            ((GuiPoweredBase) event.getGui()).addElement(new ElementButton(((GuiPoweredBase) event.getGui()), 10, 10, "Back", 10, 10, 0, 0, 30, 30, "thermalambulation/textures/ui/button.png") {
-                @Override
-                public void onClick() {
-
-                }
-            });*/
-        }
-    }
-
-    @SubscribeEvent
-    public static void registerModels(ModelRegistryEvent event) {
-        Items.registerModels();
-        Blocks.registerModels();
     }
 }

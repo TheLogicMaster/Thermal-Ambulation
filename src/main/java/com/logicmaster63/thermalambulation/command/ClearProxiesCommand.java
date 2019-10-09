@@ -1,5 +1,8 @@
 package com.logicmaster63.thermalambulation.command;
 
+import clayborn.universalremote.hooks.client.MinecraftProxy;
+import clayborn.universalremote.hooks.entity.HookedEntityPlayerMP;
+import clayborn.universalremote.hooks.world.HookedClientWorld;
 import clayborn.universalremote.util.TextFormatter;
 import com.google.common.collect.Lists;
 import com.logicmaster63.thermalambulation.CustomTeleporter;
@@ -14,6 +17,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.DimensionManager;
+import scala.actors.threadpool.Arrays;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,7 +27,7 @@ import java.util.List;
 public class ClearProxiesCommand extends CommandBase {
 
     public ClearProxiesCommand(){
-        aliases = Lists.newArrayList(ThermalAmbulation.MOD_ID, "TP", "tp");
+        aliases = Lists.newArrayList(ThermalAmbulation.MOD_ID, "CD", "cd");
     }
 
     private final List<String> aliases;
@@ -55,6 +59,8 @@ public class ClearProxiesCommand extends CommandBase {
         if (s.equals("clear")) {
             RemoteMachineRegistry.get().clear();
             sender.sendMessage(TextFormatter.translateAndStyle("thermalambulation.strings.clearproxies", TextFormatting.GREEN));
+        } else if (s.equals("info")) {
+
         }
     }
 
@@ -66,6 +72,6 @@ public class ClearProxiesCommand extends CommandBase {
     @Override
     @Nonnull
     public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, @Nullable BlockPos targetPos) {
-        return Collections.emptyList();
+        return Arrays.asList(new String[]{"clear"});
     }
 }

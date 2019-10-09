@@ -11,12 +11,8 @@ public class Entities {
     private static int index = 0;
 
     public static void register() {
-        registerEntity("walker");
-    }
-
-    private static void registerEntity(String name) {
-        ResourceLocation location = new ResourceLocation("thermalambulation", name);
-        EntityRegistry.registerModEntity(location, EntityWalker.class, location.toString(), index++, instance, 64, 1, true, 0, 16777215);
+        ResourceLocation location = new ResourceLocation("thermalambulation", "walker");
+        EntityRegistry.registerModEntity(location, EntityWalker.class, location.toString(), index++, instance, 80, 3, true, 0, 16777215);
     }
 
     public static void registerRenderers() {

@@ -1,7 +1,11 @@
 package com.logicmaster63.thermalambulation.machine;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumHand;
+
+import java.util.ArrayList;
 
 public class NullMachine implements IMachine {
 
@@ -21,12 +25,44 @@ public class NullMachine implements IMachine {
     }
 
     @Override
-    public void destroy() {
-
+    public ArrayList<ItemStack> destroy() {
+        return null;
     }
 
     @Override
     public boolean processInteract(EntityPlayer player, EnumHand hand) {
         return false;
+    }
+
+    @Override
+    public int receiveEnergy(int maxReceive, boolean simulate) {
+        return 0;
+    }
+
+    @Override
+    public int extractEnergy(int maxExtract, boolean simulate) {
+        return 0;
+    }
+
+    @Override
+    public int getEnergyStored() {
+        return 0;
+    }
+
+    @Override
+    public int getMaxEnergyStored() {
+        return 0;
+    }
+
+    @Override
+    public void readFromNBT(NBTTagCompound nbt) {
+
+    }
+
+    @Override
+    public NBTTagCompound toNBT() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        nbt.setString("Type", MachineType.NULL.name());
+        return nbt;
     }
 }

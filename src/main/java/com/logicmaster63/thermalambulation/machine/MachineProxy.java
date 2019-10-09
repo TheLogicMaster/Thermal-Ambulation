@@ -5,7 +5,6 @@ import clayborn.universalremote.hooks.entity.HookedEntityPlayerMP;
 import clayborn.universalremote.hooks.events.PlayerRemoteGuiDataManagerServer;
 import clayborn.universalremote.hooks.events.PlayerWorldSyncServer;
 import clayborn.universalremote.hooks.world.WorldServerProxy;
-import clayborn.universalremote.items.ItemRegistry;
 import clayborn.universalremote.items.ItemUniversalRemote;
 import clayborn.universalremote.util.TextFormatter;
 import clayborn.universalremote.util.Util;
@@ -13,15 +12,11 @@ import codechicken.lib.model.bakery.ModelBakery;
 import cofh.api.item.IUpgradeItem;
 import cofh.api.tileentity.IUpgradeable;
 import cofh.core.block.BlockCoreTile;
-import cofh.core.block.TileNameable;
 import cofh.core.util.helpers.ChatHelper;
-import cofh.thermalexpansion.ThermalExpansion;
+import cofh.redstoneflux.api.IEnergyProvider;
+import cofh.redstoneflux.api.IEnergyReceiver;
 import com.logicmaster63.thermalambulation.RemoteMachineRegistry;
 import com.logicmaster63.thermalambulation.ThermalAmbulation;
-import com.logicmaster63.thermalambulation.item.ItemUpgrade;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -50,15 +45,14 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.property.IExtendedBlockState;
-import org.apache.logging.log4j.Level;
 import org.lwjgl.opengl.GL11;
 
-import static clayborn.universalremote.items.ItemUniversalRemote.ActivateBlock;
+import java.util.ArrayList;
 
 public class MachineProxy implements IMachine {
     private int index;
-    private transient TileEntity tileEntity;
-    private transient World proxiedWorld;
+    private TileEntity tileEntity;
+    private World proxiedWorld;
 
     public void setIndex(int index) {
         this.index = index;
@@ -72,8 +66,8 @@ public class MachineProxy implements IMachine {
     }
 
     @Override
-    public void destroy() {
-
+    public ArrayList<ItemStack> destroy() {
+        return RemoteMachineRegistry.get().retrieveMachine(index);
     }
 
     @Override
@@ -84,194 +78,94 @@ public class MachineProxy implements IMachine {
     @Override
     public boolean processInteract(EntityPlayer player, EnumHand hand) {
         ItemStack held = Util.playerAndHandToItemStack(player, hand);
-
-        if (held.getItem() instanceof IUpgradeItem && tileEntity instanceof IUpgradeable) {
-            if (!((IUpgradeable) tileEntity).canUpgrade(held))
-                return false;
-            if (((IUpgradeable) tileEntity).installUpgrade(held)) {
-                if (!player.capabilities.isCreativeMode) {
-                    held.shrink(1);
+        if (!player.world.isRemote) {
+            if (held.getItem() instanceof IUpgradeItem && tileEntity instanceof IUpgradeable) {
+                if (!((IUpgradeable) tileEntity).canUpgrade(held))
+                    return false;
+                if (((IUpgradeable) tileEntity).installUpgrade(held)) {
+                    if (!player.capabilities.isCreativeMode) {
+                        held.shrink(1);
+                    }
+                    player.world.playSound(null, player.getPosition(), SoundEvents.BLOCK_ANVIL_USE, SoundCategory.PLAYERS, 0.6F, 1.0F);
+                    ChatHelper.sendIndexedChatMessageToPlayer(player, new TextComponentTranslation("chat.thermalfoundation.upgrade.install.success"));
+                } else {
+                    ChatHelper.sendIndexedChatMessageToPlayer(player, new TextComponentTranslation("chat.thermalfoundation.upgrade.install.failure"));
                 }
-                player.world.playSound(null, player.getPosition(), SoundEvents.BLOCK_ANVIL_USE, SoundCategory.PLAYERS, 0.6F, 1.0F);
-                ChatHelper.sendIndexedChatMessageToPlayer(player, new TextComponentTranslation("chat.thermalfoundation.upgrade.install.success"));
-            } else {
-                ChatHelper.sendIndexedChatMessageToPlayer(player, new TextComponentTranslation("chat.thermalfoundation.upgrade.install.failure"));
+                return true;
             }
-            return true;
-        }
 
-        WorldServer worldIn = (WorldServer) proxiedWorld;
-
-        if (!worldIn.isRemote) {
-
-            //ItemStack stack = Util.playerAndHandToItemStack(player, handIn);
             NBTTagCompound tag = new NBTTagCompound();
             tag.setInteger("energy", 96671);
             ItemUniversalRemote.ItemUniversalRemoteNBTParser myNBT = new ItemUniversalRemote.ItemUniversalRemoteNBTParser(tag);
-            myNBT.configureNBT(player, tileEntity.getPos(), proxiedWorld, EnumHand.MAIN_HAND, EnumFacing.NORTH, 0.5f, 0.5f, 0.5f);
+            myNBT.configureNBT(player, tileEntity.getPos(), DimensionManager.getWorld(63), EnumHand.MAIN_HAND, EnumFacing.NORTH, 0.5f, 0.5f, 0.5f);
             tag = myNBT.getTag();
-            tag.setFloat("remote.player.position.X", tileEntity.getPos().getX());
-            tag.setFloat("remote.player.position.Y", tileEntity.getPos().getY() + 1);
-            tag.setFloat("remote.player.position.Z", tileEntity.getPos().getZ());
+            tag.setDouble("remote.player.position.X", tileEntity.getPos().getX());
+            tag.setDouble("remote.player.position.Y", tileEntity.getPos().getY() + 1);
+            tag.setDouble("remote.player.position.Z", tileEntity.getPos().getZ());
             tag.setInteger("remote.dimension.id", 63);
             tag.setString("remote.dimension.name", "Thermalambulation");
             myNBT = new ItemUniversalRemote.ItemUniversalRemoteNBTParser(tag);
-            // do we have bound block data?
-            if (!myNBT.validateNBT()) {
-                // let the player know he needs data!
-
-                //player.sendMessage(TextFormatter.translateAndStyle("universalremote.strings.notbounderror", TextFormatting.DARK_RED));
-
-                // default behavior
-                //return super.onItemRightClick(worldIn, player, handIn);
-            }
-
-            // transform as needed (this covers people who upgrade)
-            /*if (stack.getMetadata() != 1)
-            {
-                stack = new ItemStack(ItemRegistry.Items().UniveralRemote, 1, 1);
-                stack.setTagCompound(myNBT.getTag());
-                Util.setPlayerItemStackInHand(stack, player, handIn);
-            }
-
-            int energyCost = computeEnergyCost(player, myNBT.getDimensionId(), myNBT.getBlockPosition());
-        */
+            if (!myNBT.validateNBT())
+                ThermalAmbulation.logger.warn("Something went wrong with nbt for remote machine: {}", myNBT.getTag());
             WorldServer world = DimensionManager.getWorld(myNBT.getDimensionId());
-
-            // this should be null only if the target dimension is not loaded
             if (world != null) {
-
-                // The block needs to be in a loaded chunk
                 if (world.isBlockLoaded(myNBT.getBlockPosition(), false)) {
-
                     IBlockState state = world.getBlockState(myNBT.getBlockPosition());
-
                     if (!UniversalRemoteConfiguration.isBlockBlacklisted(state.getBlock())) {
-
                         String test = state.getBlock().getClass().getName();
-
                         if (test.equals(myNBT.getBlockClass())) {
-
-                            // Make sure we have enough energy and if so extract it
-                            if (true /*internalExtractEnergy(stack, energyCost)*/) {
-
-                                // ensure player is in world sync
+                            if (true /*this.internalExtractEnergy(stack, energyCost)*/) {
                                 PlayerWorldSyncServer.INSTANCE.resyncIfNeeded(player);
-
-                                // container backup
                                 Container oldContainer = player.openContainer;
-
-                                // world backup
-                                WorldServer oldWorld = (WorldServer) player.world;
-
-                                // setup extra field need to setup client for remote modded gui activation!
+                                WorldServer oldWorld = (WorldServer)player.world;
                                 if (!test.startsWith("net.minecraft")) {
-                                    // prepare for remote activation!
-                                    PlayerRemoteGuiDataManagerServer.INSTANCE.PrepareForRemoteActivation(world, (EntityPlayerMP) player, myNBT.getBlockPosition(), new Vec3d(myNBT.getPlayerX(), myNBT.getPlayerY(), myNBT.getPlayerZ()));
-
-                                    // Send the pre-activation trigger and config packet!
+                                    PlayerRemoteGuiDataManagerServer.INSTANCE.PrepareForRemoteActivation(world, (EntityPlayerMP)player, myNBT.getBlockPosition(), new Vec3d(myNBT.getPlayerX(), myNBT.getPlayerY(), myNBT.getPlayerZ()));
                                     PlayerRemoteGuiDataManagerServer.INSTANCE.SendPreparePacket(world, player, myNBT.getTag());
-
-                                    // make sure player.GetEntityWorld returns the TE's world
                                     if (oldWorld != world) {
-
-                                        if (false/*!Util.doesStringStartWithAnyInArray(m_worldProxyDuringActivationExceptionsList, state.getClass().getName())*/) {
+                                        if (true/*!Util.doesStringStartWithAnyInArray(m_worldProxyDuringActivationExceptionsList, state.getClass().getName())*/) {
                                             player.world = new WorldServerProxy(oldWorld, world, test);
                                         } else {
                                             player.world = world;
                                         }
-
                                     }
-
                                 }
 
-                                EntityPlayer fakePlayer = ActivateBlock(player, state, myNBT, world);
+                                ItemUniversalRemote.ActivateBlock(player, state, myNBT, world);
 
-                                // did we get re-routed to another block?
-                                // then we need to try again!
-                                while (PlayerRemoteGuiDataManagerServer.INSTANCE.IsRetryNeeded(player)) {
-                                    ThermalAmbulation.logger.info("Retrying OpenGui..");
-
-                                    // note: count of tries kept in RemoteGuiPlayerData
+                                while(PlayerRemoteGuiDataManagerServer.INSTANCE.IsRetryNeeded(player)) {
+                                    Util.logger.info("Retrying OpenGui..", new Object[0]);
                                     PlayerRemoteGuiDataManagerServer.INSTANCE.Retry(player);
                                 }
 
-                                // player opened a container, time to make a wrapper if needed
                                 if (player.openContainer != oldContainer) {
-
                                     if (player instanceof HookedEntityPlayerMP) {
-                                        ((HookedEntityPlayerMP) player).SetRemoteFilter(
-                                                test, world,
-                                                myNBT.getBlockPosition(),
-                                                myNBT.getPlayerX(), myNBT.getPlayerY(), myNBT.getPlayerZ(),
-                                                myNBT.getPlayerPitch(), myNBT.getPlayerYaw());
+                                        ((HookedEntityPlayerMP)player).SetRemoteFilter(test, world, myNBT.getBlockPosition(), myNBT.getPlayerX(), myNBT.getPlayerY(), myNBT.getPlayerZ(), myNBT.getPlayerPitch(), myNBT.getPlayerYaw());
                                     } else {
-                                        // uh ho...
-                                        ThermalAmbulation.logger.error("Unable to set player's remote filter because player was not instance of RemoteEnabledEntityPlayerMP!");
+                                        Util.logger.error("Unable to set player's remote filter because player was not instance of RemoteEnabledEntityPlayerMP!", new Object[0]);
                                     }
 
-//									// don't need this for vanilla
-//									if (!test.startsWith("net.minecraft") && oldWorld != world)
-//									{
-
                                     PlayerWorldSyncServer.INSTANCE.setPlayerData(player, player.openContainer);
-
-//									}
-
                                 } else {
-
-                                    // it didn't open anything, clear the player data
                                     PlayerRemoteGuiDataManagerServer.INSTANCE.CancelRemoteActivation(player);
-
-                                    // put the world back since the player didn't open a container!
                                     player.world = oldWorld;
-
                                 }
-
                             } else {
-
-                                // uh ho not enough power!
                                 player.sendMessage(TextFormatter.translateAndStyle("universalremote.strings.notenoughpower", TextFormatting.DARK_RED));
-
                             }
-
                         } else {
-
-                            // bad binding...
                             player.sendMessage(TextFormatter.translateAndStyle("universalremote.strings.blockchanged", TextFormatting.DARK_RED));
-
                         }
-
                     } else {
-
-                        // blacklisted!
                         player.sendMessage(TextFormatter.translateAndStyle("universalremote.strings.blockblacklist", TextFormatting.DARK_RED));
-
                     }
-
                 } else {
-                    // chunk isn't loaded!
-
-                    // let the player know the chunk isn't loaded
                     player.sendMessage(TextFormatter.translateAndStyle("universalremote.strings.boundnotloaded", TextFormatting.DARK_RED));
-
                 }
-
-
             } else {
-
-                // let the player know the chunk (or dimension in this case) isn't loaded
                 player.sendMessage(TextFormatter.translateAndStyle("universalremote.strings.boundnotloaded", TextFormatting.DARK_RED));
-
             }
-
         }
 
-
-        //if (!proxiedWorld.isRemote)
-        //    ((TileNameable) tileEntity).openGui(player);
-        // player.openGui(ThermalExpansion.instance, 0, proxiedWorld, tileEntity.getPos().getX(), tileEntity.getPos().getY(), tileEntity.getPos().getZ());
-        //tileEntity.getBlockType().onBlockActivated(proxiedWorld, tileEntity.getPos(), tileEntity.getBlockType().getDefaultState(), player, hand, EnumFacing.NORTH, tileEntity.getPos().getX(), tileEntity.getPos().getY(), tileEntity.getPos().getZ());
         return true;
     }
 
@@ -293,17 +187,18 @@ public class MachineProxy implements IMachine {
         GlStateManager.blendFunc(770, 771);
         GlStateManager.enableBlend();
         GlStateManager.disableCull();
-        GlStateManager.translate(x - 0.4, y, z - 0.4);
+        GlStateManager.translate(x - 0.4, y + 0.1, z - 0.4);
         GlStateManager.scale(0.8, 0.8, 0.8);
+        GlStateManager.translate(.5, .5, .5);
+        GlStateManager.rotate(-yaw + 90, 0, 1, 0);
+        GlStateManager.translate(-.5, -.5, -.5);
 
         RenderHelper.disableStandardItemLighting();
         mc.renderEngine.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         BufferBuilder worldRenderer = tessellator.getBuffer();
         worldRenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
-        //worldRenderer.setTranslation(-.5, -.5, -.5);
-        //GlStateManager.rotate(yaw - 90, 0, 1, 0);
-        mc.getBlockRendererDispatcher().getBlockModelRenderer().renderModel(world, ibakedmodel, state, new BlockPos(0, 0, 0), tessellator.getBuffer(), true);
 
+        mc.getBlockRendererDispatcher().getBlockModelRenderer().renderModel(world, ibakedmodel, state, new BlockPos(0, 0, 0), tessellator.getBuffer(), true);
         worldRenderer.setTranslation(0, 0, 0);
         tessellator.draw();
         //GlStateManager.scale(2, 2, 2);
@@ -312,5 +207,46 @@ public class MachineProxy implements IMachine {
         GlStateManager.enableCull();
         GlStateManager.popMatrix();
 
+    }
+
+    @Override
+    public void readFromNBT(NBTTagCompound nbt) {
+        index = nbt.getInteger("Index");
+    }
+
+    @Override
+    public NBTTagCompound toNBT() {
+        NBTTagCompound nbt = new NBTTagCompound();
+        nbt.setInteger("Index", index);
+        nbt.setString("Type", MachineType.PROXY.name());
+        return nbt;
+    }
+
+    @Override
+    public int receiveEnergy(int maxReceive, boolean simulate) {
+        if (tileEntity instanceof IEnergyReceiver)
+            return ((IEnergyReceiver) tileEntity).receiveEnergy(EnumFacing.UP, maxReceive, simulate);
+        return 0;
+    }
+
+    @Override
+    public int extractEnergy(int maxExtract, boolean simulate) {
+        if (tileEntity instanceof IEnergyProvider)
+            return ((IEnergyProvider) tileEntity).extractEnergy(EnumFacing.UP, maxExtract, simulate);
+        return 0;
+    }
+
+    @Override
+    public int getEnergyStored() {
+        if (tileEntity instanceof IEnergyReceiver)
+            return ((IEnergyReceiver) tileEntity).getEnergyStored(EnumFacing.UP);
+        return 0;
+    }
+
+    @Override
+    public int getMaxEnergyStored() {
+        if (tileEntity instanceof IEnergyReceiver)
+            return ((IEnergyReceiver) tileEntity).getMaxEnergyStored(EnumFacing.UP);
+        return 0;
     }
 }
